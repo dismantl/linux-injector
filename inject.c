@@ -103,8 +103,11 @@ _mmap_data(int pid, size_t len, void *base_address, int protections, int flags, 
   CHECK(fseek(f, 0, SEEK_END) == 0, "fseek error");
   long shellcode_len = ftell(f);
   CHECK(shellcode_len > 0, "ftell error");
+  // align shellcode size to 32/64-bit boundary
+  long shellcode_len_aligned = shellcode_len + (sizeof(void*) - (shellcode_len % sizeof(void*)));
   CHECK(fseek(f, 0, SEEK_SET) == 0, "fseek error");
-  shellcode = malloc(shellcode_len);
+  shellcode = malloc(shellcode_len_aligned);
+  memset(shellcode, 0x90, shellcode_len_aligned); // fill with NOPs
   CHECK(shellcode, "malloc error");
   size_t r = fread(shellcode, 1, shellcode_len, f);
   CHECK(r == (size_t)shellcode_len, "fread error: %ld %ld", r, shellcode_len);
@@ -133,7 +136,7 @@ _mmap_data(int pid, size_t len, void *base_address, int protections, int flags, 
   dprintf("Wrote our shellcode parameters into process registers");
   
   // write mmap code to target process EIP
-  CHECK(ptrace_writemem(pid, (void*)EIP(&regs), shellcode, shellcode_len),
+  CHECK(ptrace_writemem(pid, (void*)EIP(&regs), shellcode, shellcode_len_aligned),
 	"Failed to write mmap code to target process");
   dprintf("Wrote mmap code to EIP %p", (void*)EIP(&regs));
   
@@ -237,12 +240,21 @@ error:
 }
 
 int
-inject_code(int pid, unsigned char *payload, size_t len)
+inject_code(int pid, unsigned char *payload, size_t payload_len)
 {
   int ret = 0, status = 0;
   void *payload_addr = NULL,
        *stack = NULL,
-       *code_cave = NULL;
+       *code_cave = NULL,
+       *payload_aligned = NULL;
+  size_t payload_size;
+  
+  // align shellcode size to 32/64-bit boundary
+  payload_size = payload_len + (sizeof(void*) - (payload_len % sizeof(void*)));
+  payload_aligned = malloc(payload_size);
+  CHECK(payload_aligned, "malloc() error");
+  memset(payload_aligned, 0x90, payload_size); // fill with NOPs
+  memcpy(payload_aligned, payload, payload_len);
   
   printf("Injecting into target process %d\n", pid);
   
@@ -264,12 +276,12 @@ inject_code(int pid, unsigned char *payload, size_t len)
   dprintf("Saved state of target process");
   
   // allocate payload space
-  CHECK(_mmap_data(pid, len, NULL, 0, 0, &payload_addr),
+  CHECK(_mmap_data(pid, payload_size, NULL, 0, 0, &payload_addr),
 	"Failed to allocate space for payload");
   dprintf("Allocated space for payload at location %p", payload_addr);
 
   // copy payload
-  CHECK(ptrace_writemem(pid, payload_addr, payload, len),
+  CHECK(ptrace_writemem(pid, payload_addr, payload_aligned, payload_size),
 	"Failed to copy payload to target process");
   dprintf("Wrote payload to target process at address %p", payload_addr);
   
@@ -286,11 +298,13 @@ inject_code(int pid, unsigned char *payload, size_t len)
   
   // launch payload via clone(2)
   dprintf("Launching payload in new thread");
-  CHECK(_launch_payload(pid, code_cave, MAX_CODE_SIZE, stack, STACK_SIZE, payload_addr, len, NULL, 0),
+  CHECK(_launch_payload(pid, code_cave, MAX_CODE_SIZE, stack, STACK_SIZE, payload_addr, payload_size, NULL, 0),
 	"Failed to launch payload");
   
   ret = 1;
 error:
+  if (payload_aligned)
+    free(payload_aligned);
   _restore_state(pid);
   ptrace_detach(pid);
   return ret;

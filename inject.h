@@ -27,4 +27,4 @@
 #endif
 
 
-int inject_code(int pid, unsigned char *payload, size_t len);
+int inject_code(int pid, unsigned char *payload, size_t payload_len);

@@ -262,11 +262,10 @@ error:
 int
 ptrace_writemem(int pid, void *addr, unsigned char *buf, size_t len)
 {
-  int ret = 0;
-  size_t wordlen = len / sizeof(void*) + (len % sizeof(void*) > 0 ? 1 : 0);
-//   void **wordbuf = (void**)buf;
-  void **wordbuf = calloc(sizeof(void*),wordlen);
-  memcpy(wordbuf,buf,len);
+  CHECK(len % sizeof(void*) == 0, "Length of memory to read must be word-aligned");
+  
+  size_t wordlen = len / sizeof(void*);
+  void **wordbuf = (void**)buf;
   
   for (size_t i = 0; i < wordlen; i++) {
     long result = ptrace(PTRACE_POKEDATA, (pid_t)pid, addr + (i * sizeof(void*)), wordbuf[i]);
@@ -275,9 +274,7 @@ ptrace_writemem(int pid, void *addr, unsigned char *buf, size_t len)
 	  pid, 
 	  addr + (i * sizeof(void*)));
   }
-  ret = 1;
+  return 1;
 error:
-  if (wordbuf)
-    free(wordbuf);
-  return ret;
+  return 0;
 }
