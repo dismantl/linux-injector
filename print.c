@@ -1,3 +1,7 @@
+//=====================================================//
+// Copyright (c) 2015, Dan Staples (https://disman.tl) //
+//=====================================================//
+
 #include <stdio.h>
 #include <malloc.h>
 #include <sched.h>

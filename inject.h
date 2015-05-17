@@ -1,3 +1,7 @@
+//=====================================================//
+// Copyright (c) 2015, Dan Staples (https://disman.tl) //
+//=====================================================//
+
 #include <string.h>
 #include <sched.h>
 #include <sys/mman.h>

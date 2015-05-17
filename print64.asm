@@ -1,3 +1,7 @@
+;//=====================================================//
+;// Copyright (c) 2015, Dan Staples (https://disman.tl) //
+;//=====================================================//
+
 use64
 ; syscall parameter regsiters: rdi, rsi, rdx, r10, r8, r9
 

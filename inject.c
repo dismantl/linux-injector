@@ -1,3 +1,7 @@
+//=====================================================//
+// Copyright (c) 2015, Dan Staples (https://disman.tl) //
+//=====================================================//
+
 #include "inject.h"
 #include "registers.h"
 #include "ptrace.h"

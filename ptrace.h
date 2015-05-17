@@ -1,3 +1,7 @@
+//=====================================================//
+// Copyright (c) 2015, Dan Staples (https://disman.tl) //
+//=====================================================//
+
 #include <sys/user.h>
 
 int ptrace_attach(int pid);

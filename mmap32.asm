@@ -1,3 +1,7 @@
+;//=====================================================//
+;// Copyright (c) 2015, Dan Staples (https://disman.tl) //
+;//=====================================================//
+
 use32
 ; syscall parameter regsiters: ebx,ecx,edx,esi,edi,ebp
 

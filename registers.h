@@ -1,3 +1,7 @@
+//=====================================================//
+// Copyright (c) 2015, Dan Staples (https://disman.tl) //
+//=====================================================//
+
 #ifndef __INJECTOR_REGISTERS_H__
 #define __INJECTOR_REGISTERS_H__
 
