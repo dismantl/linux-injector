@@ -43,6 +43,7 @@ static int _print(void* foo) {
 static void *
 _create_stack(void)
 {
+  // MAP_GROWSDOWN never seems to work for me...
   void *stack = mmap(NULL, STACK_SIZE, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE/*|MAP_GROWSDOWN*/,-1,0);
   if (!stack) {
     printf("malloc error\n");
@@ -50,6 +51,18 @@ _create_stack(void)
   }
   return stack + STACK_SIZE;
 //   return stack;
+}
+
+static void
+_print_usage(void)
+{
+  printf("Usage: print [ pfcs ] [ <shellcode file> ]\n" \
+	 "Executes provided shellcode in a variety of manners, depending on the first option given. NOTE: For all options other than `p`, the shellcode must end with a syscall to `exit`.\n" \
+         "Options:\n" \
+	 "\tp	Execute shellcode from parent thread\n" \
+	 "\tf	Run fork() and execute shellcode from forked process\n" \
+	 "\tc	Run glibc clone() and execute shellcode from child thread\n" \
+	 "\ts	Use inline assembly to perform clone syscall and run shellcode from child thread\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -64,7 +77,11 @@ int main(int argc, char *argv[]) {
   size_t r = fread(shellcode, 1, shellcode_len, f);
   fclose(f);
   
-  if (argc != 2) return 1;
+  if (argc != 2) {
+    _print_usage();
+    return 1;
+  }
+  
   switch (argv[1][0]) {
     case 'p':
       _print(NULL);
@@ -110,6 +127,7 @@ int main(int argc, char *argv[]) {
 	:"=a"(pid)
         :"r"(stack_top), "r"(CLONE_FLAGS));
 #endif
+      // for some reason, syscall(CLONE_SYSCALL,...) always segfaults
 //       pid = syscall(CLONE_SYSCALL, CLONE_FLAGS, stack_top, NULL, NULL, NULL);
       if (pid == -1) {
 	printf("clone syscall error: %d (%s)\n", errno, strerror(errno));
@@ -120,6 +138,10 @@ int main(int argc, char *argv[]) {
       } else {
 	printf("new thread id: %d\n", pid);
       }
+      break;
+    default:
+      _print_usage();
+      return 1;
   }
   sleep(3);
   printf("done\n");
