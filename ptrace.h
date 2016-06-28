@@ -3,6 +3,7 @@
 //=====================================================//
 
 #include <sys/user.h>
+#include <stddef.h>
 
 int ptrace_attach(int pid);
 int ptrace_detach(int pid);
