@@ -104,7 +104,10 @@ _mmap_data(int pid, size_t len, void *base_address, int protections, int flags, 
   long shellcode_len = ftell(f);
   CHECK(shellcode_len > 0, "ftell error");
   // align shellcode size to 32/64-bit boundary
-  long shellcode_len_aligned = shellcode_len + (sizeof(void*) - (shellcode_len % sizeof(void*)));
+  long shellcode_len_aligned = shellcode_len;
+  if (shellcode_len % sizeof(void*) != 0) {
+    shellcode_len_aligned += sizeof(void*) - shellcode_len % sizeof(void*);
+  }
   CHECK(fseek(f, 0, SEEK_SET) == 0, "fseek error");
   shellcode = malloc(shellcode_len_aligned);
   memset(shellcode, 0x90, shellcode_len_aligned); // fill with NOPs
