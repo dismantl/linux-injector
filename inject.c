@@ -242,7 +242,7 @@ error:
 int
 inject_code(int pid, unsigned char *payload, size_t payload_len)
 {
-  int ret = 0, status = 0;
+  int ret = 0;
   void *payload_addr = NULL,
        *stack = NULL,
        *code_cave = NULL,
